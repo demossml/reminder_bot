@@ -1,0 +1,4 @@
+**/__pycache__/*
+sever_init.py
+poetry.lock
+bot.log

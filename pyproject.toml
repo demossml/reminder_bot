@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "reminder-bot"
+version = "0.1.0"
+description = ""
+authors = ["Dima <demossml11@gmail.com>"]
+
+packages = [
+    { include = "bd" },
+    { include = "bot" },
+    { include = "reports" },
+]
+
+[tool.poetry.dependencies]
+
+python = "^3.9"
+pyfunctional = "^1.4.3"
+mongoengine = "^0.27.0"
+requests = "^2.31.0"
+arrow = "^1.2.3"
+schedule = "^1.2.0"
+geopy = "^2.3.0"
+asyncio = "^3.4.3"
+aiohttp = "^3.8.5"
+matplotlib = "^3.4.1"
+python-dotenv = "^1.0.1"
+pyTelegramBotAPI = "^4.0.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

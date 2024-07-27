@@ -7,25 +7,25 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: rootpassword
-      MONGODB_DATABASE: tc
+      MONGODB_DATABASE: reminder
       MONGODB_HOSTNAME: mongodb
-      TELEGRAM_TOKEN: "6908041033:AAH3bZffu70Bf5fFy00DeGy-KI0hXLMzs_w"
+      TELEGRAM_TOKEN: "YOUR TOCUN TELEGRAM"
     ports:
       - 127.0.0.1:24000:27020
     volumes:
       - mongodb_data:/data/db
 
-  evo_telebot:
-    # Сервис evo_telebot
+  reminder_bot:
+    # reminder_bot
     platform: linux/amd64
     build: .
     restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: rootpassword
-      MONGODB_DATABASE: timur
+      MONGODB_DATABASE: reminder
       MONGODB_HOSTNAME: mongodb
-      TELEGRAM_TOKEN: "6908041033:AAH3bZffu70Bf5fFy00DeGy-KI0hXLMzs_w"
+      TELEGRAM_TOKEN: "YOUR TOCUN TELEGRAM"
     volumes:
       - ./app:/home/nonroot/app
     command: sh -c "ulimit -n 1024 && poetry run watchmedo auto-restart -d . -p '*.py' -R -- python3 bot/__init__.py"
