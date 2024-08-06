@@ -13,7 +13,7 @@ packages = [
 
 [tool.poetry.dependencies]
 
-python = "^3.9"
+PyPy = "^3.8"
 pyfunctional = "^1.4.3"
 mongoengine = "^0.27.0"
 requests = "^2.31.0"
