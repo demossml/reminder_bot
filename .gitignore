@@ -2,3 +2,4 @@
 sever_init.py
 poetry.lock
 bot.log
+.env

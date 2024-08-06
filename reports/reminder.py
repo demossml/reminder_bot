@@ -1,4 +1,5 @@
 from bd.model import Session, Chat, Post
+from .util import format_reminder
 
 from arrow import utcnow, get
 import sys
@@ -8,7 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-name = "✨ Post ➡️".upper()
+name = "✨ Reminder ➡️".upper()
 desc = ""
 mime = "text"
 
@@ -30,7 +31,8 @@ class ReminderMenuInput:
         ]
 
         return output
-    
+
+
 class ReminderActionMenuInput:
     """
     Меню напоминаний
@@ -47,8 +49,9 @@ class ReminderActionMenuInput:
             {"id": "delete_reminders", "name": "❌ УДАЛИТЬ НАПОМИНАНИЯ ➡️"},
         ]
 
-        return output    
-    
+        return output
+
+
 class ChangeAReminderInput:
     """
     Меню напоминаний
@@ -64,16 +67,10 @@ class ChangeAReminderInput:
             {"id": "change_reminder", "name": "✏️ ИЗМЕНИТЬ ТЕКСТ НАПОМИНАНИЯ ➡️"},
         ]
 
-        return output       
-    
+        return output
 
 
-class LinkInput:
-    desc = "Напишите адрес формате @chat_name ✍️".upper()
-    type = "MESSAGE"
-
-
-class GetLinkInput:
+class GetChatInput:
     """
     Класс для получения  и добавления списка чатов
     """
@@ -89,12 +86,10 @@ class GetLinkInput:
         if data_chats:
 
             for item in Chat.objects(user_id=session.user_id, status_type="active"):
-                for link in item["link"]:
-                    output.append({"id": link, "name": f"{link} ➡️"})
 
-        output.append(
-            {"id": "add_chat", "name": "➕ ДОБАВИТЬ ЧАТ ➡️"},
-        )
+                name = item["chat_title"]
+                output.append({"id": item["chat_id"], "name": f"{name} ➡️"})
+
         return output
 
 
@@ -208,7 +203,8 @@ class GetPostInput:
 
         if data_chats:
             for item in Post.objects(user_id=session.user_id, status_type="active"):
-                output.append({"id": item["date"], "name": f"{item["reminder_name"]} ➡️"})
+                reminder_name = item["reminder_name"]
+                output.append({"id": item["date"], "name": f"{reminder_name} ➡️"})
         return output
 
 
@@ -242,7 +238,6 @@ def get_period_inputs(period):
     return {}
 
 
-   
 def get_inputs(session: Session):
     """
     Функция для определения необходимых вводов на основе выбранного типа напоминания и периода.
@@ -263,80 +258,53 @@ def get_inputs(session: Session):
         # Обработка добавления напоминания
         if report_type == "add_reminder":
             # Проверка наличия ссылки
-            link = inputs.get("link")
-            if not link:
-                return {"link": GetLinkInput}
+            chat_id = inputs.get("chat_id")
+            if not chat_id:
+                return {"chat_id": GetChatInput}
 
-            # Если выбран пункт добавления чата
-            if link == "add_chat":
-                # Проверка наличия имени напоминания
-                reminder_name = inputs.get("reminder_name")
-                if not reminder_name:
-                    return {"reminder_name": NameReminderInput}
+            # Проверка наличия имени напоминания
+            reminder_name = inputs.get("reminder_name")
+            if not reminder_name:
+                return {"reminder_name": NameReminderInput}
+            # Проверка наличия текста
+            text = inputs.get("text")
+            if not text:
+                return {"text": TextInput}
 
-                # Проверка наличия имени ссылки
-                link_name = inputs.get("link_name")
-                if not link_name:
-                    return {"link_name": LinkInput}
+            # Проверка наличия периода
+            period = inputs.get("period")
+            if not period:
+                return {"period": PeriodInput}
 
-                # Проверка наличия текста
-                text = inputs.get("text")
-                if not text:
-                    return {"text": TextInput}
-
-                # Проверка наличия периода
-                period = inputs.get("period")
-                if not period:
-                    return {"period": PeriodInput}
-
-                # Обработка в зависимости от выбранного периода
-                return get_period_inputs(period)
-
-            # Обработка для других случаев
-            else:
-                # Проверка наличия имени напоминания
-                reminder_name = inputs.get("reminder_name")
-                if not reminder_name:
-                    return {"reminder_name": NameReminderInput}
-                # Проверка наличия текста
-                text = inputs.get("text")
-                if not text:
-                    return {"text": TextInput}
-
-                # Проверка наличия периода
-                period = inputs.get("period")
-                if not period:
-                    return {"period": PeriodInput}
-
-                # Обработка в зависимости от выбранного периода
-                return get_period_inputs(period)
+            # Обработка в зависимости от выбранного периода
+            return get_period_inputs(period)
 
         # Проверка на случай, если выбран "редактировать напоминание" или "просмотреть напоминания"
         if report_type == "edit_reminder":
             # Проверка наличия ссылки
             reminder_name = inputs.get("reminder_name")
             if not reminder_name:
-                return {"reminder_name": GetPostInput} 
-            
+                return {"reminder_name": GetPostInput}
+
             # Проверка наличия действия для напоминания
             action = inputs.get("action")
             if not action:
-                return {"action": ReminderActionMenuInput} 
-            
+                return {"action": ReminderActionMenuInput}
+
             if action == "change_reminder":
                 change = inputs.get("change")
                 if not change:
                     return {"change": ChangeAReminderInput}
-                
+
                 # Обработка изменения периода напоминания
                 if change == "change_period":
                     period = inputs.get("period")
                     if not period:
                         return {"period": PeriodInput}
-                    
+
                     # Обработка в зависимости от выбранного периода
                     return get_period_inputs(period)
-                
+
                 if change == "change_reminder":
                     return {"text": TextInput}
 
@@ -357,157 +325,130 @@ def generate(session: Session):
 
         # Определяем тип отчета
         report_type = inputs.get("report")
-   
 
         if report_type == "add_reminder":
             # Получаем параметры для напоминания
-            link_name = inputs.get("link_name", None)
-            link = inputs.get("link")
+            chat_id = inputs.get("chat_id")
             month = inputs.get("month", None)
             day_of_month = inputs.get("day_of_month", None)
             time = inputs.get("time", None)
             reminder_name = inputs.get("reminder_name", None)
 
-            # Проверяем, нужно ли добавить ссылку в чат
-            if link == "add_chat":
-                # Ищем чат пользователя по user_id
-                chat = Chat.objects(user_id=session.user_id).first()
+            chat = Chat.objects(user_id=int(session.user_id)).first()
 
-                if chat:
+            post = {
+                "text": inputs.get("text"),
+                "user_id": session.user_id,
+                "status_type": "active",
+                "date": utcnow().to("local").isoformat(),
+                "chat_id": chat_id,
+                "month": month,
+                "day_of_month": day_of_month,
+                "time": time,
+                "chat_name": chat.chat_title,
+                "reminder_name": reminder_name,
+            }
 
-                    # Если чат существует, добавляем новую ссылку к существующим
-                    chat_link = chat.link if chat.link else []
-                    if link_name not in chat_link:
-                        chat_link.append(link_name)
-                else:
-                    # Если чат не существует, создаем новый список ссылок
-                    chat_link = [link_name]
+            report_data = format_reminder(post)
 
-                # Подготавливаем параметры для обновления или создания записи
-                params = {
-                    "user_id": session.user_id,
-                    "status_type": "active",
-                    "date": utcnow().to("local").isoformat(),
-                    "link": chat_link,
-                }
-
-                # Обновляем или создаем запись в коллекции Chat
-                Chat.objects(user_id=session.user_id).update(**params, upsert=True)
-                
-                # Подготавливаем данные для создания нового напоминания
-                post = {
-                    "text": inputs.get("text"),
-                    "user_id": session.user_id,
-                    "status_type": "active",
-                    "date": utcnow().to("local").isoformat(),
-                    "link": link_name,
-                    "month": month,
-                    "day_of_month": day_of_month,
-                    "time": time,
-                    "reminder_name": reminder_name,
-                }
-
-            else:
-                # Подготавливаем данные для создания нового напоминания
-                post = {
-                    "text": inputs.get("text"),
-                    "user_id": session.user_id,
-                    "status_type": "active",
-                    "date": utcnow().to("local").isoformat(),
-                    "link": link,
-                    "month": month,
-                    "day_of_month": day_of_month,
-                    "time": time,
-                    "reminder_name": reminder_name,
-                }
             logger.info(post)
             # Обновляем или создаем запись в коллекции Post
             Post.objects(date=post["date"]).update(**post, upsert=True)
-            return [post]
-        
+            return [report_data]
+
         # Если тип отчета "edit_reminder", редактируем существующее напоминание
         if report_type == "edit_reminder":
-            
+
             reminder_name = inputs.get("reminder_name", None)
             print(reminder_name)
             change = inputs.get("change")
             action = inputs.get("action")
-            
+
             if action == "delete_reminders":
                 post = {
                     "status_type": "delete",
                     "date": utcnow().to("local").isoformat(),
-                 
                 }
                 logger.info(post)
                 Post.objects(date=reminder_name).update(**post, upsert=True)
-                
-                return  [
-                    {
-    
-                        "Status type:":  "delete",
-                        "Reminder name:": reminder_name,
-                            
-                    }
-                ]
-            
+
+                post = Post.objects(date=reminder_name).first()
+
+                report_data = format_reminder(post)
+
+                return [report_data]
             if action == "view_reminder":
                 post = Post.objects(date=reminder_name).first()
-                
-                return  [
-                    {
-                        "Text:": post["text"],
-                        "User_id:": post.user_id,
-                        "Status type:": post.status_type,
-                        "Date:": post.date[:16],
-                        "Link:": post.link,
-                        "Month:": post.month,
-                        "Day:": post.day_of_month,
-                        "Time:": post.time,
-                        "Reminder name:": post.reminder_name,
-                            
-                    }
-                ]
-                
-            
+
+                report_data = {
+                    "📋 Текст напоминания:": post["text"],
+                    "👤 ID пользователя:": post.user_id,
+                    "📅 Статус напом.:": post.status_type,
+                    "🕒 Дата создания:": post["date"][:10],
+                    "💬 chat_name:": post.chat_name,
+                    "📅 Месяц напом.:": post.month,
+                    "📅 День месяца напом.:": post.day_of_month,
+                    "⏰ Время напом.:": post.time,
+                    "📌 Название напом.:": post["reminder_name"],
+                }
+                return [report_data]
             if change:
                 post = Post.objects(date=reminder_name).first()
-                if change == "change_period":
-                    month = inputs.get("month", None)
-                    day_of_month = inputs.get("day_of_month", None)
-                    time = inputs.get("time", None)
-        
-                    post = {
-                    "date": utcnow().to("local").isoformat(),
-                    "month": month,
-                    "day_of_month": day_of_month,
-                    "time": time,
-                    "reminder_name": post.reminder_name,
-                    }
-                
-                if change == "change_reminder":
-                    text = inputs.get("text", None)
-                    link_name = inputs.get("link_name", None)
-                    link = inputs.get("link")
-                    month = inputs.get("month", None)
-                    day_of_month = inputs.get("day_of_month", None)
-                    time = inputs.get("time", None)
-                    reminder_name = inputs.get("reminder_name", None)
-                
-                    post = {
-                        "text": text,
-                        "reminder_name": post.reminder_name,
 
+                print(post["reminder_name"])
+                if change == "change_period":
+                    print("change_period")
+                    month = inputs.get("month", None)
+                    day_of_month = inputs.get("day_of_month", None)
+                    time = inputs.get("time", None)
+
+                    post_ = {
+                        "date": utcnow().to("local").isoformat(),
+                        "month": month,
+                        "day_of_month": day_of_month,
+                        "time": time,
+                        "reminder_name": post["reminder_name"],
                     }
-                    
-                logger.info(post)
-                Post.objects(date=reminder_name).update(**post, upsert=True)
-                return [post]
-            
-            
+
+                    report_data = {
+                        "📋 Текст напоминания:": post["text"],
+                        "👤 ID пользователя:": post.user_id,
+                        "📅 Статус:": post.status_type,
+                        "🕒 Дата:": post_["date"][:16],
+                        "💬 chat_name:": post.chat_name,
+                        "📅 Месяц:": month,
+                        "📅 День месяца:": day_of_month,
+                        "⏰ Время:": time,
+                        "📌 Название напоминания:": post["reminder_name"],
+                    }
+
+                if change == "change_reminder":
+                    print("change_reminder")
+                    text = inputs.get("text", None)
+
+                    post_ = {
+                        "text": text,
+                        "reminder_name": post["reminder_name"],
+                    }
+
+                    report_data = {
+                        "📋 Текст напоминания:": text,
+                        "👤 ID пользователя:": post.user_id,
+                        "📅 Статус:": post.status_type,
+                        "🕒 Дата:": post["date"][:16],
+                        "💬 chat_name:": post.chat_name,
+                        "📅 Месяц:": post.month,
+                        "📅 День месяца:": post.day_of_month,
+                        "⏰ Время:": post.time,
+                        "📌 Название напоминания:": post["reminder_name"],
+                    }
+                logger.info(post_)
+                logger.info(report_data)
+                Post.objects(date=reminder_name).update(**post_, upsert=True)
+
+                return [report_data]
 
     except Exception as e:
         # Логируем ошибку, если что-то пошло не так
         # logger.error(f"Произошла ошибка: {e}")
         logger.error(f"Ошибка: {e} на строке {sys.exc_info()[-1].tb_lineno}")
-

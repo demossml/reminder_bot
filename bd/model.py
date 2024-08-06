@@ -37,6 +37,7 @@ class Message:
     photo: None
     message_id: int
     document: None
+    # content_type: str = ""  # Добавляем атрибут content_typ
 
 
 def get_session_expiration():
@@ -158,6 +159,7 @@ def create_massage(params):
             photo=params.photo,
             message_id=params.message_id,
             document=params.document,
+            # content_type=params.content_type if hasattr(params, "content_type") else "",
         )
     else:
         return Message(
@@ -169,6 +171,7 @@ def create_massage(params):
             photo=None,
             message_id=params.message.message_id,
             document=None,
+            # new_chat_members=params.chat,
         )
 
 

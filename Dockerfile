@@ -1,5 +1,6 @@
 FROM duffn/python-poetry:3.10-slim-1.1.12-2022-01-21
 
+ENV TZ=Etc/UTC
 
 WORKDIR /app
 

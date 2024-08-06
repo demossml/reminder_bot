@@ -10,7 +10,8 @@ user_id = [49089990677]
 
 
 def get_reports(session: Session):
-    return {"settings": settings, "reminder": reminder}
+
+    return {"reminder": reminder}
 
 
 reports = {"settings": settings, "reminder": reminder}

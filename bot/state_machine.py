@@ -13,10 +13,10 @@ import time
 import io
 
 
-from bd.model import Message, Session, PDFFile
+from bd.model import Message, Session, Chat
 from reports import reports, get_reports
 from util_s import (
-    format_message_list5,
+    welcome_message,
     format_message_list4,
 )
 
@@ -45,28 +45,45 @@ class State(str, Enum):
 #
 async def handle_message(bot: telebot.TeleBot, message: Message, session: Session):
     start = ["Menu", "/start", "Меню"]
-    if message.text in start:
-        session.state = State.INIT
-        session.room = "0"
-        session.update(room=session.room, state=session.state)
-    if message.text == "/log":
-        text_file_path = "bot.log"
-        with open(text_file_path, "rb") as text_file:
-            await bot.send_document(message.chat_id, document=text_file)
+    # Определить список стартовых команд
+    start_ = ("/start",)
+    chat = Chat.objects(user_id=int(session.user_id)).first()
 
-    next = lambda: handle_message(bot, message, session)
-    try:
-        await states[session.state](bot, message, session, next)
-    except Exception as e:
-        # print(ex)
-        # raise ex
-        logger.exception("Error handling message")
-        logger.error(f"Ошибка: {e} на строке {sys.exc_info()[-1].tb_lineno}")
+    if chat:
+        if message.text in start:
+            session.state = State.INIT
+            session.room = "0"
+            session.update(room=session.room, state=session.state)
+
+        if message.text == "/log":
+            text_file_path = "bot.log"
+            with open(text_file_path, "rb") as text_file:
+                await bot.send_document(message.chat_id, document=text_file)
+
+        next = lambda: handle_message(bot, message, session)
+        try:
+            await states[session.state](bot, message, session, next)
+        except Exception as e:
+            # print(ex)
+            # raise ex
+            logger.exception("Error handling message")
+            logger.error(f"Ошибка: {e} на строке {sys.exc_info()[-1].tb_lineno}")
+            await bot.send_message(
+                message.chat_id, f"Ошибка: {e} на строке {sys.exc_info()[-1].tb_lineno}"
+            )
+            session.state = State.INIT
+            next()
+    else:
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+        btn_address = types.KeyboardButton("Меню")
+        markup.add(btn_address)
         await bot.send_message(
-            message.chat_id, f"Ошибка: {e} на строке {sys.exc_info()[-1].tb_lineno}"
+            message.chat_id,
+            welcome_message,
+            reply_markup=markup,
         )
         session.state = State.INIT
-        next()
+        session.room = "0"
 
 
 async def handle_init_state(
@@ -213,7 +230,7 @@ async def handle_ready_state(bot, message, session, next):
     btn_address = types.KeyboardButton("Меню")
     markup.add(btn_address)
     await bot.delete_message(message.chat_id, message.message_id)
-    await bot.send_message(message.chat_id, "Привет", reply_markup=markup)
+    await bot.send_message(message.chat_id, "👇", reply_markup=markup)
     session.update(state=session.state)
     logger.debug(f"Handled ready state for chat {message.chat_id}")
 

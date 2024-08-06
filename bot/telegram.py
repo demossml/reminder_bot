@@ -12,7 +12,7 @@ class Telegram:
         # Определяем обработчик для текстовых сообщений, местоположений, фотографий и документов
         @self.bot.message_handler(
             func=lambda message: True,
-            content_types=["location", "text", "photo", "document"],
+            content_types=["location", "text", "photo", "document", "new_chat_members"],
         )
         async def handle_message(message):
             await handler(message, bot)  # Передаем сообщение обработчику

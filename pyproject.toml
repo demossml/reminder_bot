@@ -8,6 +8,7 @@ packages = [
     { include = "bd" },
     { include = "bot" },
     { include = "reports" },
+    { include = "schedules" }
 ]
 
 [tool.poetry.dependencies]
@@ -24,6 +25,7 @@ aiohttp = "^3.8.5"
 matplotlib = "^3.4.1"
 python-dotenv = "^1.0.1"
 pyTelegramBotAPI = "^4.0.0"
+pytz = "^2024.1"
 
 
 [build-system]
