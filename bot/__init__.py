@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 async def handler(params, bot):
     try:
+
         logger.info("Начало обработки сообщения")
 
         # Создание сообщения

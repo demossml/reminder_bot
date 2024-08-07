@@ -23,12 +23,13 @@ services:
     build: . # Сборка контейнера из текущего каталога
     restart: always
     environment:
+      # TZ: Etc/GMT+0
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: rootpassword
       MONGODB_DATABASE: reminder
       MONGODB_HOSTNAME: mongodb
       TELEGRAM_TOKEN: "7273193775:AAHJSzY76CvDHjDyCTRSCDixVUuvwuVPYX8"
-      # TZ: Etc/UTC
+      
 
 
     volumes:
@@ -45,6 +46,7 @@ services:
     build: .
     restart: always
     environment:
+      # TZ: Etc/GMT+0
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: rootpassword
       MONGODB_DATABASE: reminder

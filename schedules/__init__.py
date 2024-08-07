@@ -104,8 +104,9 @@ def schedule_messages():
             logging.error(f"Неверный формат времени: {time_str}")
             continue
 
+        #
         # Преобразуем строку времени в объект arrow
-        time_obj = arrow.get(time_str, "HH:mm").replace(tzinfo="Europe/Moscow")
+        time_obj = arrow.get(time_str, "HH:mm")
 
         # Планируем сообщения в зависимости от типа напоминания
         if month:
@@ -119,7 +120,7 @@ def schedule_messages():
 
             # Ежемесячное напоминание в указанный день и время
             def monthly_job():
-                today = arrow.now("Europe/Moscow")
+                today = arrow.now()
                 if today.day == day_of_month:
                     job(chat_id, text)
 
