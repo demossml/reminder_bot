@@ -10,8 +10,15 @@ user_id = [49089990677]
 
 
 def get_reports(session: Session):
-
-    return {"reminder": reminder}
+    if session.user_id in user_id:
+        return {
+            "reminder": reminder,
+            "settings": settings,
+        }
+    else:
+        return {
+            "reminder": reminder,
+        }
 
 
 reports = {"settings": settings, "reminder": reminder}

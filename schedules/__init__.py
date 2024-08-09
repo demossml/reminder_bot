@@ -10,15 +10,33 @@ import pytz
 import threading
 import arrow
 
-
-logger = logging.getLogger(__name__)
-
-# Устанавливаем временную зону MSK
-msk = pytz.timezone("Europe/Moscow")
-
-# Токен вашего бота
-TOKEN = "7482295427:AAHuiiKgdQtqnWLKi8sAWn7AwVcbC2xMafU"
-bot = telebot.TeleBot(TOKEN)
+time_zone_ = {
+    "+00": 0,
+    "+01": -1,
+    "+02": -2,
+    "+03": -3,
+    "+04": -4,
+    "+05": -5,
+    "+06": -6,
+    "+07": -7,
+    "+08": -8,
+    "+09": -9,
+    "+10": -10,
+    "+11": -11,
+    "+12": -12,
+    "-01": 1,
+    "-02": 2,
+    "-03": 3,
+    "-04": 4,
+    "-05": 5,
+    "-06": 6,
+    "-07": 7,
+    "-08": 8,
+    "-09": 9,
+    "-10": 10,
+    "-11": 11,
+    "-12": 12,
+}
 
 welcome_message = """
 👋 Привет! Я - ваш новый помощник по напоминаниям! 🎉
@@ -43,6 +61,17 @@ welcome_message = """
 
 Спасибо, что выбрали меня! Давайте сделаем вашу работу еще более организованной и эффективной. 🚀
 """
+
+
+logger = logging.getLogger(__name__)
+
+# Устанавливаем временную зону MSK
+msk = pytz.timezone("Europe/Moscow")
+
+# Токен вашего бота
+TOKEN = "7482295427:AAHuiiKgdQtqnWLKi8sAWn7AwVcbC2xMafU"
+bot = telebot.TeleBot(TOKEN)
+
 
 btUrlChannel = types.InlineKeyboardButton(
     text="Reminder Manager 📝", url="https://t.me/ReminderManager_bot"
@@ -95,41 +124,73 @@ def schedule_messages():
         chat_id = item["chat_id"]
         reminder_name = item["reminder_name"]
 
-        logging.info(
-            f"Планирование сообщения: reminder_name={reminder_name}, чат_id={chat_id}, текст={text}, день={day_of_month}, месяц={month}, время={time_str}"
-        )
+        # Получаем часовой пояс для чата
+        chat = Chat.objects(chat_id=int(chat_id)).first()
+        if chat:
+            if chat["TZ"]:
+                time_zone = chat["TZ"]
+                print(type(time_zone))
+                print(type(time_zone_[time_zone]))
 
-        # Проверка формата времени
-        if not validate_time_format(time_str):
-            logging.error(f"Неверный формат времени: {time_str}")
-            continue
+                # Получаем текущий год
+                now = arrow.now()
+                year = now.year
 
-        #
-        # Преобразуем строку времени в объект arrow
-        time_obj = arrow.get(time_str, "HH:mm")
+                # Формируем строку даты и времени
+                if month and day_of_month:
+                    datetime_str = f"{year}-{month:02d}-{day_of_month:02d} {time_str}"
+                elif day_of_month:
+                    datetime_str = (
+                        f"{year}-{now.month:02d}-{day_of_month:02d} {time_str}"
+                    )
+                else:
+                    datetime_str = f"{year}-{now.month:02d}-{now.day:02d} {time_str}"
 
-        # Планируем сообщения в зависимости от типа напоминания
-        if month:
-            # Ежедневное напоминание в указанное время
-            schedule.every().day.at(time_obj.format("HH:mm")).do(
-                job, chat_id, text
-            ).tag(reminder_name)
-        elif day_of_month:
-            day_of_month = int(day_of_month)
-            schedule_time = time_obj.format("HH:mm")
+                logging.info(datetime_str)
 
-            # Ежемесячное напоминание в указанный день и время
-            def monthly_job():
-                today = arrow.now()
-                if today.day == day_of_month:
-                    job(chat_id, text)
+                try:
+                    # Применяем метод arrow.get(), чтобы создать объект Arrow
+                    dt = arrow.get(datetime_str, "YYYY-MM-DD HH:mm").shift(
+                        hours=int(time_zone_[time_zone])  # Смещение часового пояса
+                    )
+                    # Уже сделано смещение, поэтому no need to call .to('UTC') here
+                except Exception as e:
+                    logging.error(f"Ошибка при обработке даты и времени: {e}")
+                    continue
 
-            schedule.every().day.at(schedule_time).do(monthly_job).tag(reminder_name)
-        else:
-            # Ежедневное напоминание в указанное время, если не указан день или месяц
-            schedule.every().day.at(time_obj.format("HH:mm")).do(
-                job, chat_id, text
-            ).tag(reminder_name)
+                logging.info(
+                    f"Планирование сообщения: time_zone={time_zone}, reminder_name={reminder_name}, чат_id={chat_id}, текст={text}, день={day_of_month}, месяц={month}, время={time_str}"
+                )
+                logging.info(dt.format("MM-DD HH:mm"))
+
+                # Проверка формата времени
+                if not validate_time_format(time_str):
+                    logging.error(f"Неверный формат времени: {time_str}")
+                    continue
+
+                # Планируем сообщения в зависимости от типа напоминания
+                if month and day_of_month:
+                    # Ежегодное напоминание в указанный месяц, день и время
+                    schedule.every().year.at(dt.format("MM-DD HH:mm")).do(
+                        job, chat_id, text
+                    ).tag(reminder_name)
+                elif day_of_month:
+                    # Ежемесячное напоминание в указанный день и время
+                    schedule_time = dt.format("HH:mm")
+
+                    def monthly_job():
+                        today = arrow.utcnow()
+                        if today.day == day_of_month:
+                            job(chat_id, text)
+
+                    schedule.every().day.at(schedule_time).do(monthly_job).tag(
+                        reminder_name
+                    )
+                else:
+                    # Ежедневное напоминание в указанное время, если не указан день или месяц
+                    schedule.every().day.at(dt.format("HH:mm")).do(
+                        job, chat_id, text
+                    ).tag(reminder_name)
 
 
 # Функция для обновления расписания
@@ -158,6 +219,7 @@ def on_user_joined(message: types.Message):
         "chat_title": message.chat.title,
         "user_id": message.from_user.id,
         "status_type": "active",
+        "TZ": None,
     }
     try:
         Chat.objects(chat_id=message.chat.id).update(**params, upsert=True)
@@ -201,7 +263,7 @@ if __name__ == "__main__":
     update_schedule()  # Первоначальный запуск для планирования
 
     # Планируем обновление расписания каждые 70 секунд
-    schedule.every(220).seconds.do(update_schedule).tag("update_schedule")
+    schedule.every(20).seconds.do(update_schedule).tag("update_schedule")
 
     # Запуск планировщика в отдельном потоке
     scheduler_thread = threading.Thread(target=run_scheduler)

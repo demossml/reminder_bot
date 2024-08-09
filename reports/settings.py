@@ -1,7 +1,4 @@
-from bd.model import (
-    Session,
-    Chat,
-)
+from bd.model import Session, Chat, Post
 
 from .inputs import DocStatusInput
 
@@ -106,8 +103,8 @@ def get_inputs(session: Session):
     elif report_type == "delete_chat":
 
         return {
-            "link": GetLinInput,
-            "docStatus": DocStatusInput,
+            # "link": GetLinInput,
+            # "docStatus": DocStatusInput,
         }
     elif report_type == "view_chats":
 
@@ -140,26 +137,28 @@ def generate(session: Session):
             )
         return report_data
     if report_type == "delete_chat":
-        report_data = []
-        # содоет ключи в session.params["inputs"]
-        for i in range(int(room) + 1):
-            params = session.params["inputs"][str(i)]
-            params.update(
-                {
-                    "user_id": session.user_id,
-                    "status_type": "delete",
-                    "date": utcnow().to("local").isoformat(),
-                }
-            )
+        # report_data = []
+        # # содоет ключи в session.params["inputs"]
+        # for i in range(int(room) + 1):
+        #     params = session.params["inputs"][str(i)]
+        #     params.update(
+        #         {
+        #             "user_id": session.user_id,
+        #             "status_type": "delete",
+        #             "date": utcnow().to("local").isoformat(),
+        #         }
+        #     )
 
-            Chat.objects(user_id=session.user_id, link=params["link"]).update(
-                **params, upsert=True
-            )
+        #     Chat.objects(user_id=session.user_id, link=params["link"]).update(
+        #         **params, upsert=True
+        #     )
 
-            report_data.append(
-                result={"АДРЕС": params.get("link", "Не указан"), "СТАТУС": "УДАЛЕН"}
-            )
-        return report_data
+        #     report_data.append(
+        #         result={"АДРЕС": params.get("link", "Не указан"), "СТАТУС": "УДАЛЕН"}
+        #     )
+        Chat.drop_collection()
+        Post.drop_collection()
+        return [{1: 1}]
     if report_type == "view_chats":
         report_data = []
         for item in Chat.objects(user_id=session.user_id):

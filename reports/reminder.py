@@ -178,6 +178,45 @@ class WeekDayInput:
         ]
 
 
+class TimeZoneInput:
+    """
+    Запрос часового пояса
+    """
+
+    name = "ВЫБЕРИТЕ ЧАСОВОЙ ПОЯС 🕒".upper()
+    desc = "ВЫБЕРИТЕ ЧАСОВОЙ ПОЯС 🕒".upper()
+    type = "SELECT"
+
+    def get_options(self, session: Session):
+        return [
+            {"id": "-12", "name": "UTC-12 ➡️"},
+            {"id": "-11", "name": "UTC-11 ➡️"},
+            {"id": "-10", "name": "UTC-10 ➡️"},
+            {"id": "-09", "name": "UTC-09 ➡️"},
+            {"id": "-08", "name": "UTC-08 ➡️"},
+            {"id": "-07", "name": "UTC-07 ➡️"},
+            {"id": "-06", "name": "UTC-06 ➡️"},
+            {"id": "-05", "name": "UTC-05 ➡️"},
+            {"id": "-04", "name": "UTC-04 ➡️"},
+            {"id": "-03", "name": "UTC-03 ➡️"},
+            {"id": "-02", "name": "UTC-02 ➡️"},
+            {"id": "-01", "name": "UTC-01 ➡️"},
+            {"id": "+00", "name": "UTC+00 ➡️"},
+            {"id": "+01", "name": "UTC+01 ➡️"},
+            {"id": "+02", "name": "UTC+02 ➡️"},
+            {"id": "+03", "name": "UTC+03 ➡️"},
+            {"id": "+04", "name": "UTC+04 ➡️"},
+            {"id": "+05", "name": "UTC+05 ➡️"},
+            {"id": "+06", "name": "UTC+06 ➡️"},
+            {"id": "+07", "name": "UTC+07 ➡️"},
+            {"id": "+08", "name": "UTC+08 ➡️"},
+            {"id": "+09", "name": "UTC+09 ➡️"},
+            {"id": "+10", "name": "UTC+10 ➡️"},
+            {"id": "+11", "name": "UTC+11 ➡️"},
+            {"id": "+12", "name": "UTC+12 ➡️"},
+        ]
+
+
 class TimeInput:
     """
     Запрос времени
@@ -257,10 +296,19 @@ def get_inputs(session: Session):
 
         # Обработка добавления напоминания
         if report_type == "add_reminder":
-            # Проверка наличия ссылки
+            # Проверка наличия chat_id
             chat_id = inputs.get("chat_id")
+            tz = inputs.get("TZ")
+
             if not chat_id:
+                # if Chat.objects(chat_id__in=chat_id).
                 return {"chat_id": GetChatInput}
+            # print(type(chat_id))
+            # print(vars(Chat.objects(chat_id=int(chat_id)).first()))
+
+            if Chat.objects(chat_id=int(chat_id)).first().TZ == None:
+                if not tz:
+                    return {"TZ": TimeZoneInput}
 
             # Проверка наличия имени напоминания
             reminder_name = inputs.get("reminder_name")
@@ -282,9 +330,9 @@ def get_inputs(session: Session):
         # Проверка на случай, если выбран "редактировать напоминание" или "просмотреть напоминания"
         if report_type == "edit_reminder":
             # Проверка наличия ссылки
-            reminder_name = inputs.get("reminder_name")
-            if not reminder_name:
-                return {"reminder_name": GetPostInput}
+            reminder_date = inputs.get("reminder_date")
+            if not reminder_date:
+                return {"reminder_date": GetPostInput}
 
             # Проверка наличия действия для напоминания
             action = inputs.get("action")
@@ -293,6 +341,7 @@ def get_inputs(session: Session):
 
             if action == "change_reminder":
                 change = inputs.get("change")
+
                 if not change:
                     return {"change": ChangeAReminderInput}
 
@@ -326,6 +375,14 @@ def generate(session: Session):
         # Определяем тип отчета
         report_type = inputs.get("report")
 
+        time_zone = inputs.get("TZ")
+
+        if time_zone:
+            # Проверка наличия chat_id
+            chat_id = inputs.get("chat_id")
+            params = {"TZ": time_zone}
+            Chat.objects(chat_id=int(chat_id)).update(**params, upsert=True)
+
         if report_type == "add_reminder":
             # Получаем параметры для напоминания
             chat_id = inputs.get("chat_id")
@@ -334,8 +391,9 @@ def generate(session: Session):
             time = inputs.get("time", None)
             reminder_name = inputs.get("reminder_name", None)
 
-            chat = Chat.objects(user_id=int(session.user_id)).first()
+            chat = Chat.objects(chat_id=int(chat_id)).first()
 
+            print(vars(chat))
             post = {
                 "text": inputs.get("text"),
                 "user_id": session.user_id,
@@ -347,6 +405,7 @@ def generate(session: Session):
                 "time": time,
                 "chat_name": chat.chat_title,
                 "reminder_name": reminder_name,
+                "TZ": chat.TZ,
             }
 
             report_data = format_reminder(post)
@@ -359,8 +418,8 @@ def generate(session: Session):
         # Если тип отчета "edit_reminder", редактируем существующее напоминание
         if report_type == "edit_reminder":
 
-            reminder_name = inputs.get("reminder_name", None)
-            print(reminder_name)
+            reminder_date = inputs.get("reminder_date", None)
+            print(reminder_date)
             change = inputs.get("change")
             action = inputs.get("action")
 
@@ -370,15 +429,16 @@ def generate(session: Session):
                     "date": utcnow().to("local").isoformat(),
                 }
                 logger.info(post)
-                Post.objects(date=reminder_name).update(**post, upsert=True)
+                Post.objects(date=reminder_date).update(**post, upsert=True)
 
-                post = Post.objects(date=reminder_name).first()
+                post = Post.objects(date=reminder_date).first()
 
                 report_data = format_reminder(post)
 
                 return [report_data]
             if action == "view_reminder":
-                post = Post.objects(date=reminder_name).first()
+                post = Post.objects(date=reminder_date).first()
+                chat = Chat.objects(chat_id=int(post.chat_id)).first()
 
                 report_data = {
                     "📋 Текст напоминания:": post["text"],
@@ -390,10 +450,12 @@ def generate(session: Session):
                     "📅 День месяца напом.:": post.day_of_month,
                     "⏰ Время напом.:": post.time,
                     "📌 Название напом.:": post["reminder_name"],
+                    "🌍 Часовой пояс:": chat.TZ,
                 }
                 return [report_data]
             if change:
-                post = Post.objects(date=reminder_name).first()
+                post = Post.objects(date=reminder_date).first()
+                chat = Chat.objects(chat_id=int(post.chat_id)).first()
 
                 print(post["reminder_name"])
                 if change == "change_period":
@@ -420,10 +482,10 @@ def generate(session: Session):
                         "📅 День месяца:": day_of_month,
                         "⏰ Время:": time,
                         "📌 Название напоминания:": post["reminder_name"],
+                        "🌍 Часовой пояс:": chat.TZ,
                     }
 
                 if change == "change_reminder":
-                    print("change_reminder")
                     text = inputs.get("text", None)
 
                     post_ = {
@@ -441,10 +503,11 @@ def generate(session: Session):
                         "📅 День месяца:": post.day_of_month,
                         "⏰ Время:": post.time,
                         "📌 Название напоминания:": post["reminder_name"],
+                        "🌍 Часовой пояс:": chat.TZ,
                     }
                 logger.info(post_)
                 logger.info(report_data)
-                Post.objects(date=reminder_name).update(**post_, upsert=True)
+                Post.objects(date=reminder_date).update(**post_, upsert=True)
 
                 return [report_data]
 

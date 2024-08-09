@@ -202,6 +202,7 @@ def format_reminder(input_dict: dict) -> dict:
         "time": "⏰ Время напом.:",
         "chat_name": "💬 Название чата:",
         "reminder_name": "📌 Название напом.:",
+        "TZ": "🌍 Часовой пояс:",
     }
 
     formatted_dict = {}
