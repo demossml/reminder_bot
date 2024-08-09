@@ -134,6 +134,7 @@ def schedule_messages():
 
                 # Получаем текущий год
                 now = arrow.now()
+                logging.info(now)
                 year = now.year
 
                 # Формируем строку даты и времени
