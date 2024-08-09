@@ -6,7 +6,7 @@
 from reports import settings, reminder
 from bd.model import Session
 
-user_id = [49089990677]
+user_id = [490899906]
 
 
 def get_reports(session: Session):
