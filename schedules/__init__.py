@@ -129,11 +129,10 @@ def schedule_messages():
         if chat:
             if chat["TZ"]:
                 time_zone = chat["TZ"]
-                print(type(time_zone))
-                print(type(time_zone_[time_zone]))
 
                 # Получаем текущий год
                 msk = pytz.timezone("Europe/Moscow")
+                chat_tz = pytz.timezone("Europe/Moscow")
 
                 now = datetime.now(msk)
                 logging.info(f"tt: {now}")
@@ -152,7 +151,7 @@ def schedule_messages():
                 try:
                     # Преобразуем строку в объект datetime
                     dt = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M")
-                    dt = dt.replace(tzinfo=msk)  # Устанавливаем временную зону
+                    dt = dt.replace(tzinfo=chat_tz)  # Устанавливаем временную зону
                 except Exception as e:
                     logging.error(f"Ошибка при обработке даты и времени: {e}")
                     continue
@@ -178,7 +177,7 @@ def schedule_messages():
                     schedule_time = dt.strftime("%H:%M")
 
                     def monthly_job():
-                        today = datetime.now(msk)
+                        today = datetime.now(chat_tz)
                         if today.day == day_of_month:
                             job(chat_id, text)
 
