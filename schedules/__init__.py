@@ -133,8 +133,10 @@ def schedule_messages():
                 print(type(time_zone_[time_zone]))
 
                 # Получаем текущий год
-                now = arrow.now()
-                logging.info(now)
+                msk = pytz.timezone("Europe/Moscow")
+
+                now = datetime.now(msk)
+                logging.info(f"tt: {now}")
                 year = now.year
 
                 # Формируем строку даты и времени
@@ -151,9 +153,7 @@ def schedule_messages():
 
                 try:
                     # Применяем метод arrow.get(), чтобы создать объект Arrow
-                    dt = arrow.get(datetime_str, "YYYY-MM-DD HH:mm").shift(
-                        hours=int(time_zone_[time_zone])  # Смещение часового пояса
-                    )
+                    dt = arrow.get(datetime_str, "YYYY-MM-DD HH:mm")
                     # Уже сделано смещение, поэтому no need to call .to('UTC') here
                 except Exception as e:
                     logging.error(f"Ошибка при обработке даты и времени: {e}")
