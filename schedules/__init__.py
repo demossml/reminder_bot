@@ -141,20 +141,18 @@ def schedule_messages():
 
                 # Формируем строку даты и времени
                 if month and day_of_month:
-                    datetime_str = f"{year}-{month:02d}-{day_of_month:02d} {time_str}"
+                    datetime_str = f"{year}-{month}-{day_of_month} {time_str}"
                 elif day_of_month:
-                    datetime_str = (
-                        f"{year}-{now.month:02d}-{day_of_month:02d} {time_str}"
-                    )
+                    datetime_str = f"{year}-{now.month}-{day_of_month} {time_str}"
                 else:
-                    datetime_str = f"{year}-{now.month:02d}-{now.day:02d} {time_str}"
+                    datetime_str = f"{year}-{now.month}-{now.day} {time_str}"
 
                 logging.info(datetime_str)
 
                 try:
-                    # Применяем метод arrow.get(), чтобы создать объект Arrow
-                    dt = arrow.get(datetime_str, "YYYY-MM-DD HH:mm")
-                    # Уже сделано смещение, поэтому no need to call .to('UTC') here
+                    # Преобразуем строку в объект datetime
+                    dt = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M")
+                    dt = dt.replace(tzinfo=msk)  # Устанавливаем временную зону
                 except Exception as e:
                     logging.error(f"Ошибка при обработке даты и времени: {e}")
                     continue
@@ -162,7 +160,6 @@ def schedule_messages():
                 logging.info(
                     f"Планирование сообщения: time_zone={time_zone}, reminder_name={reminder_name}, чат_id={chat_id}, текст={text}, день={day_of_month}, месяц={month}, время={time_str}"
                 )
-                logging.info(dt.format("MM-DD HH:mm"))
 
                 # Проверка формата времени
                 if not validate_time_format(time_str):
@@ -172,15 +169,16 @@ def schedule_messages():
                 # Планируем сообщения в зависимости от типа напоминания
                 if month and day_of_month:
                     # Ежегодное напоминание в указанный месяц, день и время
-                    schedule.every().year.at(dt.format("MM-DD HH:mm")).do(
-                        job, chat_id, text
-                    ).tag(reminder_name)
+                    schedule_time = dt.strftime("%m-%d %H:%M")
+                    schedule.every().year.at(schedule_time).do(job, chat_id, text).tag(
+                        reminder_name
+                    )
                 elif day_of_month:
                     # Ежемесячное напоминание в указанный день и время
-                    schedule_time = dt.format("HH:mm")
+                    schedule_time = dt.strftime("%H:%M")
 
                     def monthly_job():
-                        today = arrow.utcnow()
+                        today = datetime.now(msk)
                         if today.day == day_of_month:
                             job(chat_id, text)
 
@@ -189,9 +187,10 @@ def schedule_messages():
                     )
                 else:
                     # Ежедневное напоминание в указанное время, если не указан день или месяц
-                    schedule.every().day.at(dt.format("HH:mm")).do(
-                        job, chat_id, text
-                    ).tag(reminder_name)
+                    schedule_time = dt.strftime("%H:%M")
+                    schedule.every().day.at(schedule_time).do(job, chat_id, text).tag(
+                        reminder_name
+                    )
 
 
 # Функция для обновления расписания
