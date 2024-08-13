@@ -145,7 +145,7 @@ def schedule_messages():
             try:
                 # Применяем метод arrow.get(), чтобы создать объект Arrow
                 dt = arrow.get(datetime_str, "YYYY-MM-DD HH:mm").shift(
-                    hours=int(time_zone)  # Смещение часового пояса
+                    hours=int(-3)  # Смещение часового пояса
                 )
                 logger.info(f"dt: {dt}")
                 # Уже сделано смещение, поэтому no need to call .to('UTC') here
