@@ -138,6 +138,10 @@ def schedule_messages():
         if chat:
             time_zone = chat["TZ"]
 
+            # value, meaning = get_time_zone_value(time_zone)
+            # print(value)
+            # print(time_zone_[time_zone])
+
             # Получаем текущий год
             now = arrow.now().shift(hours=int(time_zone))  # Смещение часового пояса
             logger.info(f"now: {arrow.now()}")
@@ -145,9 +149,13 @@ def schedule_messages():
 
             # Формируем строку даты и времени
             if month and day_of_month:
-                datetime_str = f"{year}-{month:02d}-{day_of_month:02d} {time_str}"
+                datetime_str = (
+                    f"{year}-{int(month):02d}-{int(day_of_month):02d} {time_str}"
+                )
             elif day_of_month:
-                datetime_str = f"{year}-{now.month:02d}-{day_of_month:02d} {time_str}"
+                datetime_str = (
+                    f"{year}-{now.month:02d}-{int(day_of_month):02d} {time_str}"
+                )
             else:
                 datetime_str = f"{year}-{now.month:02d}-{now.day:02d} {time_str}"
 
@@ -173,16 +181,21 @@ def schedule_messages():
 
             # Планируем сообщения в зависимости от типа напоминания
             if month and day_of_month:
-                # Ежегодное напоминание в указанный месяц, день и время
-                schedule.every().year.at(dt.format("MM-DD HH:mm")).do(
-                    job, chat_id, text
-                ).tag(reminder_name)
+                # Ежедневное напоминание, внутри которого проверяется соответствие дня и месяца
+                schedule_time = dt.format("HH:mm")
+
+                def yearly_job():
+                    today = arrow.utcnow().shift(hours=int(time_zone))
+                    if today.day == day_of_month and today.month == month:
+                        job(chat_id, text)
+
+                schedule.every().day.at(schedule_time).do(yearly_job).tag(reminder_name)
             elif day_of_month:
                 # Ежемесячное напоминание в указанный день и время
                 schedule_time = dt.format("HH:mm")
 
                 def monthly_job():
-                    today = arrow.utcnow()
+                    today = arrow.utcnow().shift(hours=int(time_zone))
                     if today.day == day_of_month:
                         job(chat_id, text)
 
