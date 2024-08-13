@@ -181,12 +181,14 @@ def schedule_messages():
 
             # Планируем сообщения в зависимости от типа напоминания
             if month and day_of_month:
+
                 # Ежедневное напоминание, внутри которого проверяется соответствие дня и месяца
                 schedule_time = dt.format("HH:mm")
 
                 def yearly_job():
-                    today = arrow.utcnow().shift(hours=int(time_zone))
-                    if today.day == day_of_month and today.month == month:
+                    print("yearly_job")
+                    today = now
+                    if today.day == int(day_of_month) and today.month == int(month):
                         job(chat_id, text)
 
                 schedule.every().day.at(schedule_time).do(yearly_job).tag(reminder_name)
@@ -195,8 +197,10 @@ def schedule_messages():
                 schedule_time = dt.format("HH:mm")
 
                 def monthly_job():
-                    today = arrow.utcnow().shift(hours=int(time_zone))
-                    if today.day == day_of_month:
+
+                    today = now
+                    type
+                    if today.day == int(day_of_month):
                         job(chat_id, text)
 
                 schedule.every().day.at(schedule_time).do(monthly_job).tag(
