@@ -80,6 +80,14 @@ channelMenu = types.InlineKeyboardMarkup(row_width=1)
 channelMenu.add(btUrlChannel)
 
 
+def get_time_zone_value(key):
+    value = time_zone_.get(key)
+    if value is None:
+        return None  # Возвращает None, если ключ не найден
+    sign = "+" if value < 0 else "-"
+    return sign, abs(value)
+
+
 # Функция для проверки формата времени
 def validate_time_format(time_str):
     try:
@@ -126,11 +134,16 @@ def schedule_messages():
 
         # Получаем часовой пояс для чата
         chat = Chat.objects(chat_id=int(chat_id)).first()
+
         if chat:
             time_zone = chat["TZ"]
 
+            # value, meaning = get_time_zone_value(time_zone)
+            # print(value)
+            # print(time_zone_[time_zone])
+
             # Получаем текущий год
-            now = arrow.now().shift(hours=+3)  # Смещение часового пояса
+            now = arrow.now().shift(hours=int(time_zone))  # Смещение часового пояса
             logger.info(f"now: {arrow.now()}")
             year = now.year
 
@@ -145,7 +158,7 @@ def schedule_messages():
             try:
                 # Применяем метод arrow.get(), чтобы создать объект Arrow
                 dt = arrow.get(datetime_str, "YYYY-MM-DD HH:mm").shift(
-                    hours=int(-3)  # Смещение часового пояса
+                    hours=int(time_zone_[time_zone])  # Смещение часового пояса
                 )
                 logger.info(f"dt: {dt}")
                 # Уже сделано смещение, поэтому no need to call .to('UTC') here
