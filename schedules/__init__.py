@@ -138,10 +138,6 @@ def schedule_messages():
         if chat:
             time_zone = chat["TZ"]
 
-            # value, meaning = get_time_zone_value(time_zone)
-            # print(value)
-            # print(time_zone_[time_zone])
-
             # Получаем текущий год
             now = arrow.now().shift(hours=int(time_zone))  # Смещение часового пояса
             logger.info(f"now: {arrow.now()}")
