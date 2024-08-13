@@ -134,7 +134,7 @@ def schedule_messages():
                 msk = pytz.timezone("Europe/Moscow")
                 chat_tz = pytz.timezone("Europe/Moscow")
 
-                now = datetime.now(msk)
+                now = datetime.now()
                 logging.info(f"tt: {now}")
                 year = now.year
 
