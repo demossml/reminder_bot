@@ -188,6 +188,7 @@ def format_reminder(input_dict: dict) -> dict:
             - "📅 Статус напом." для 'status_type'
             - "🕒 Дата создания:" для 'date'
             - "📅 Месяц напом.:" для 'month'
+            - "📅 День недели напом.:" для 'month'
             - "📅 День месяца напом.:" для 'day_of_month'
             - "⏰ Время напом.:" для 'time'
             - "📌 Название напом.:" для 'reminder_name'
@@ -198,6 +199,7 @@ def format_reminder(input_dict: dict) -> dict:
         "status_type": "📅 Статус напом.",
         "date": "🕒 Дата создания:",
         "month": "📅 Месяц напом.:",
+        "week_day": "📅 День недели",
         "day_of_month": "📅 День месяца напом.:",
         "time": "⏰ Время напом.:",
         "chat_name": "💬 Название чата:",

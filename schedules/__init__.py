@@ -126,6 +126,7 @@ def schedule_messages():
     # Проходим по каждому посту из базы данных
     for item in posts_data:
         day_of_month = item["day_of_month"]
+        week_day = item["week_day"]
         month = item["month"]
         text = item["text"]
         time_str = item["time"]
@@ -138,14 +139,12 @@ def schedule_messages():
         if chat:
             time_zone = chat["TZ"]
 
-            # value, meaning = get_time_zone_value(time_zone)
-            # print(value)
-            # print(time_zone_[time_zone])
-
             # Получаем текущий год
             now = arrow.now().shift(hours=int(time_zone))  # Смещение часового пояса
             logger.info(f"now: {arrow.now()}")
             year = now.year
+
+            next_weekday = now.shift(days=(int(week_day) - now.weekday()) % 7)
 
             # Формируем строку даты и времени
             if month and day_of_month:
@@ -156,6 +155,10 @@ def schedule_messages():
                 datetime_str = (
                     f"{year}-{now.month:02d}-{int(day_of_month):02d} {time_str}"
                 )
+            elif week_day:
+                next_weekday = now.shift(days=(int(week_day) - now.weekday()) % 7)
+                datetime_str = f"{next_weekday.format('YYYY-MM-DD')} {time_str}"
+
             else:
                 datetime_str = f"{year}-{now.month:02d}-{now.day:02d} {time_str}"
 
@@ -164,6 +167,8 @@ def schedule_messages():
                 dt = arrow.get(datetime_str, "YYYY-MM-DD HH:mm").shift(
                     hours=int(time_zone_[time_zone])  # Смещение часового пояса
                 )
+                day_of_month_ = dt.format("DD")
+
                 logger.info(f"dt: {dt}")
                 # Уже сделано смещение, поэтому no need to call .to('UTC') here
             except Exception as e:
@@ -171,7 +176,7 @@ def schedule_messages():
                 continue
 
             logging.info(
-                f"Планирование сообщения: time_zone={time_zone}, reminder_name={reminder_name}, чат_id={chat_id}, текст={text}, день={day_of_month}, месяц={month}, время={time_str}"
+                f"Планирование сообщения: time_zone={time_zone}, reminder_name={reminder_name}, чат_id={chat_id}, текст={text}, день={day_of_month}, день недели={week_day}, месяц={month}, время={time_str}"
             )
 
             # Проверка формата времени
@@ -188,7 +193,7 @@ def schedule_messages():
                 def yearly_job():
                     print("yearly_job")
                     today = now
-                    if today.day == int(day_of_month) and today.month == int(month):
+                    if today.day == int(day_of_month_) and today.month == int(month):
                         job(chat_id, text)
 
                 schedule.every().day.at(schedule_time).do(yearly_job).tag(reminder_name)
@@ -199,13 +204,24 @@ def schedule_messages():
                 def monthly_job():
 
                     today = now
-                    type
-                    if today.day == int(day_of_month):
+
+                    if today.day == int(day_of_month_):
                         job(chat_id, text)
 
                 schedule.every().day.at(schedule_time).do(monthly_job).tag(
                     reminder_name
                 )
+            elif week_day:
+                # Еженедельное напоминание в указанный день недели и время
+                schedule_time = dt.format("HH:mm")
+
+                def weekly_job():
+                    today_weekday = dt.format("dddd")
+                    if today_weekday == int(week_day):
+                        job(chat_id, text)
+
+                schedule.every().day.at(schedule_time).do(weekly_job).tag(reminder_name)
+
             else:
                 # Ежедневное напоминание в указанное время, если не указан день или месяц
                 schedule.every().day.at(dt.format("HH:mm")).do(job, chat_id, text).tag(

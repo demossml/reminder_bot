@@ -114,7 +114,7 @@ class PeriodInput:
             {"id": "daily", "name": "📅 ЕЖЕДНЕВНО ➡️"},
             {"id": "weekly", "name": "📅 ЕЖЕНЕДЕЛЬНО ➡️"},
             {"id": "monthly", "name": "📅 ЕЖЕМЕСЯЧНО ➡️"},
-            {"id": "yearly", "name": "📅 ЕЖЕГОДНО ➡️"},
+            # {"id": "yearly", "name": "📅 ЕЖЕГОДНО ➡️"},
         ]
 
 
@@ -301,10 +301,7 @@ def get_inputs(session: Session):
             tz = inputs.get("TZ")
 
             if not chat_id:
-                # if Chat.objects(chat_id__in=chat_id).
                 return {"chat_id": GetChatInput}
-            # print(type(chat_id))
-            # print(vars(Chat.objects(chat_id=int(chat_id)).first()))
 
             if Chat.objects(chat_id=int(chat_id)).first().TZ == None:
                 if not tz:
@@ -390,6 +387,7 @@ def generate(session: Session):
             day_of_month = inputs.get("day_of_month", None)
             time = inputs.get("time", None)
             reminder_name = inputs.get("reminder_name", None)
+            week_day = inputs.get("week_day", None)
 
             chat = Chat.objects(chat_id=int(chat_id)).first()
 
@@ -400,6 +398,7 @@ def generate(session: Session):
                 "status_type": "active",
                 "date": utcnow().to("local").isoformat(),
                 "chat_id": chat_id,
+                "week_day": week_day,
                 "month": month,
                 "day_of_month": day_of_month,
                 "time": time,
@@ -447,6 +446,7 @@ def generate(session: Session):
                     "🕒 Дата создания:": post["date"][:10],
                     "💬 chat_name:": post.chat_name,
                     "📅 Месяц напом.:": post.month,
+                    "📅 День недели": post.week_day,
                     "📅 День месяца напом.:": post.day_of_month,
                     "⏰ Время напом.:": post.time,
                     "📌 Название напом.:": post["reminder_name"],
@@ -467,6 +467,7 @@ def generate(session: Session):
                     post_ = {
                         "date": utcnow().to("local").isoformat(),
                         "month": month,
+                        "week_day": week_day,
                         "day_of_month": day_of_month,
                         "time": time,
                         "reminder_name": post["reminder_name"],
@@ -479,6 +480,7 @@ def generate(session: Session):
                         "🕒 Дата:": post_["date"][:16],
                         "💬 chat_name:": post.chat_name,
                         "📅 Месяц:": month,
+                        "📅 День недели": post_["week_day"],
                         "📅 День месяца:": day_of_month,
                         "⏰ Время:": time,
                         "📌 Название напоминания:": post["reminder_name"],
@@ -500,6 +502,7 @@ def generate(session: Session):
                         "🕒 Дата:": post["date"][:16],
                         "💬 chat_name:": post.chat_name,
                         "📅 Месяц:": post.month,
+                        "📅 День недели": post.week_day,
                         "📅 День месяца:": post.day_of_month,
                         "⏰ Время:": post.time,
                         "📌 Название напоминания:": post["reminder_name"],
