@@ -463,6 +463,7 @@ def generate(session: Session):
                     month = inputs.get("month", None)
                     day_of_month = inputs.get("day_of_month", None)
                     time = inputs.get("time", None)
+                    week_day = inputs.get("week_day", None)
 
                     post_ = {
                         "date": utcnow().to("local").isoformat(),
