@@ -213,10 +213,22 @@ def schedule_messages():
                 logging.info("week_day")
                 # Еженедельное напоминание в указанный день недели и время
                 schedule_time = dt.format("HH:mm")
+                week_days_list = [
+                    "Monday",
+                    "Tuesday",
+                    "Wednesday",
+                    "Thursday",
+                    "Friday",
+                    "Saturday",
+                    "Sunday",
+                ]
+
+                # Преобразуем числовое значение week_day в название дня недели
+                week_day_name = week_days_list[int(week_day)]
 
                 def weekly_job():
                     today_weekday = dt.format("dddd")
-                    if today_weekday == int(week_day):
+                    if today_weekday == week_day_name:
                         job(chat_id, text)
 
                 schedule.every().day.at(schedule_time).do(weekly_job).tag(reminder_name)
