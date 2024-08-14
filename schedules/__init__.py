@@ -210,6 +210,7 @@ def schedule_messages():
                     reminder_name
                 )
             elif week_day:
+                logging.info("week_day")
                 # Еженедельное напоминание в указанный день недели и время
                 schedule_time = dt.format("HH:mm")
 
