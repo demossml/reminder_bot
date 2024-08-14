@@ -144,8 +144,6 @@ def schedule_messages():
             logger.info(f"now: {arrow.now()}")
             year = now.year
 
-            next_weekday = now.shift(days=(int(week_day) - now.weekday()) % 7)
-
             # Формируем строку даты и времени
             if month and day_of_month:
                 datetime_str = (
